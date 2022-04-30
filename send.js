@@ -11,28 +11,37 @@ require('dotenv').config();
  */
 
 // TODO CHANGE BEFORE LIVE
-const CONTRACT_ADDRESS_LAND = "0x7f14d1655f443Bbcc9d0F8E5B02A996107616224";
-const CONTRACT_ADDRESS_SENDER = "0x35fBFF53c81a9a1dF3bd499700B6205Cf3E1C7DC";
-const CONTRACT_ADDRESS_TOKEN = "0x750Fe3F102B7051896Ff72241F38F27F71696FC6";
+const CONTRACT_ADDRESS_LAND = "0x34d85c9CDeB23FA97cb08333b511ac86E1C4E258";
+const CONTRACT_ADDRESS_SENDER = "0x1d5623690979b712E9d58a4AB0e10F8505b24701";
+const CONTRACT_ADDRESS_TOKEN = "0x4d224452801ACEd8B2F0aebE155379bb5D594381";
 
 // GAS FEES
-const MAX_FEE = 100;
+const MAX_FEE = 400;
 const GAS_LIMIT_SEND_TOKEN = 60000;
 const GAS_LIMIT_MINT = 400000;
 const GAS_LIMIT_TRANSFER = 200000;
 
 /*
- * flashbots related
+ * CHANGE THESE ACCORDINGLY
  */
 
 // TODO: use this value to bid on gas
-const TOTAL_GAS_FEE = ethers.utils.parseEther('0.0105');
-const BASE_GAS_ETH = ethers.utils.parseEther('0.0005');
+const TOTAL_GAS_FEE = ethers.utils.parseEther('0.2');
+const PROOF_OVERRIDE = undefined;
+
+
+
+
+
+
+
+// leave these alone
+const BASE_GAS_ETH = ethers.utils.parseEther('0.14192');
 const MINER_TIP = TOTAL_GAS_FEE.sub(BASE_GAS_ETH);
 
 // config
 // TODO CHANGE BEFORE LIVE
-const DEBUG = true;
+const DEBUG = false;
 const ETHER = ethers.BigNumber.from(10).pow(18);
 const GWEI = ethers.BigNumber.from(10).pow(9);
 const EIP_1559 = 2;
@@ -40,9 +49,6 @@ const EIP_1559 = 2;
 // settings
 const WALLET_PRIVATE_KEY_TRIGGER = process.env.WALLET_PRIVATE_KEY_TRIGGER;
 const WALLET_PRIVATE_KEY_KYC = process.env.WALLET_PRIVATE_KEY_KYC;
-const RPC_PROVIDER_GOERLI = `https://eth-goerli.alchemyapi.io/v2/${RPC_PROVIDER_KEY}`;
-const RPC_PROVIDER_MAINNET = `https://eth-mainnet.alchemyapi.io/v2/${RPC_PROVIDER_KEY}`;
-const RPC_PROVIDER = DEBUG ? RPC_PROVIDER_GOERLI : RPC_PROVIDER_MAINNET;
 const RPC_PROVIDER = process.env.RPC_PROVIDER;
 
 const FLASHBOTS_ENDPOINT_MAINNET = "https://relay.flashbots.net";
@@ -62,16 +68,7 @@ const FLASHBOTS_CHAIN_ID = DEBUG
   ? FLASHBOTS_CHAIN_ID_GOERLI
   :FLASHBOTS_CHAIN_ID_MAINNET;
 
-
-// generally no need to modify between contracts
 const PREFIRE_BLOCKS = 3
-
-
-// FUNCTION DATA
-// this is the data payload send along with your transaction
-// this MUST be consisted with the mint function name, the mint amount, and other parameters
-// to the mint function
-const FUNCTION_DATA_VOX = "0x40c10f190000000000000000000000008403e29de6c446f91414a619440030144662ec1d0000000000000000000000000000000000000000000000000000000000000001";
 
 const getFlashbotsProviders = (provider, wallet, endpoints) => {
   return Promise.all(endpoints.map(async (endpointInfo) => {
@@ -123,11 +120,15 @@ let nonceKYC;
     console.log('[INFO]', `latest mined block: ${blockNumber}`);
   });
 
-  // console.log(getMerkleProof());
-  // return;
   let proof;
   try {
-    proof = await genMerkleData(walletKYC.address);
+    if (PROOF_OVERRIDE != undefined) {
+      proof = PROOF_OVERRIDE;
+    }
+    else {
+      proof = await genMerkleData(walletKYC.address);
+
+    }
   }
   catch (e) {
     console.log('[ERROR]', 'KYC wallet doesnt have merkleproof');
@@ -144,39 +145,6 @@ const genMerkleData = async (walletAddress) => {
   const resp = await axios.get(endpoint);
   const proof = resp.data;
   return proof;
-
-  /*
-  const kycWallets = [ '0x7571983F79416F3E672FE76851F5A5523f56c4F5', '0xEb359D4fe7cC9b6C4a92e5E7aDd9f021c7eBf9CB', '0x176d57af31DE62d6Ec0cdeBc973ea7df2ab0767b', '0xB7AF35cDcCfF99B5dC3A11E2F19C5e2c1c49e48F' ];
-  const leafNodes = kycWallets.map(addr => keccak256(addr));
-  const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
-
-  const root = merkleTree.getRoot().toString('hex');
-  const walletHash = leafNodes[3];
-  const proof = merkleTree.getHexProof(walletHash);
-  console.log(root);
-  return proof;
-  */
-}
-
-
-const getMerkleProof = () => {
-  const proof = ["0x9c5283537e9b8c35a884254c25f19f3d252e69ba3be83275951830cf5166b3f0","0x2484026e6ba8843a7fa4a6ac1a6cf55b6d2005de9e0e612c7fade6c44f68f692","0x06ad86dee685327a1b2796b6e37b6fbf0b179f8f4b4ca4f9adfd5a797f58efe3","0xfc4f6c817840a8e4176cce548a3957f4d334cf26f4dee948d99089db1b0329b8","0xfc7f6c76d3b34e171d5dd7b120cc4b64f425768c57d6fe05447d08b4a213fb48","0x4c94bc5ae661e383949d2c1e98491770a87e4d113a0ce0a9e7a4e24e7e37d740","0x09f152e3a9a179e2885e7aa83d73d441f2926f437639a837bd984a83a87265e2","0xf87810bb1034e4c91071a996e5906d8ef1b252274d46cf423ac2a09eb9d6b89c","0x5cd59da5e1e8c675764a775e9518f66946d50bc103d27081f7da402d3a034502","0x3050d5f48e1cd08c321613ffee5b289afd33846770937b21db4e769d72cc77c3","0x63730ea1b48c185260513b2ae87bb5583390f936f082a9a5a329a498eda3dd9f","0x57b0b1672c023ff670a16b4d17284ef5b19cb6ab12d52849d1e23aede181d9f9","0x0ff12b25b85be5de554ff3220d3ad9ef3074effd81ac4412de9f6df4242dc636","0x0dbd308a126efac4ddbd4a845054c3960f80220e7d1241ad38f757845fc636a7","0x6b16c1f9303129d0c960d8b254fd50cca9993e0a77bbc4ee3451a6fe19e283a6","0xad3f757f8d068de78aacb96a454743d418f1f7e870c92434e227693af60f139f","0x5b2f35616ef4997c7f30dcc8bb941919fb4bab170424187ae676a1594ba69bc0"];
-  let computedHash = keccak256('0xB7AF35cDcCfF99B5dC3A11E2F19C5e2c1c49e48F');
-  // const proof = ["0x8a96b8f142132798b40d3330d79f79aae7fa4285a7e7f40fe7d8ee672f9f51f5","0xac54d85734c3fed02356a8ee917efa10b1afa73da2c8236a3baa692cfb435ccc","0xc4864545d1083859ccf28ce59c7e1c957565f9edd817da533e857e138d2e5662","0x1e370a356428ffd62ab4bdca599d1403db274646479e3c0d29ed63262022f1ba","0x9a73bde01fbc15f0597fd5342ef4102a5a7acf239e0ee4a0bbb7c0dcf14242ff","0xeac6213dfd48ff8cf0b7b8e99e28f4a90b0bd35cefad2a1f2c9308776de7939f","0x319fd4dadc9be17ca861240a3f637c156172be6163467b5d0f45346d34dd0fea","0x99f6b0df1b119537bd6c6f9cdcb19077e5a085dbc7eb2a6ccb6673074742e8f0","0x4b7b0379aa3179e0682ef6b2a5540caf2ae1f98acbcc9a6d490b68eed98ce5b2","0x24b47c79755cbc8b18b6cadf0e7d089403c468f8573d9c1a1ab846b463dd3bca","0x1daa8775edab1e02e912d156d8209c05285808295610abea6401054986798a8f","0x47e2c79907bde813f678e281391849e28f09fbc9ab5339605eaeba576783d023","0xf202a716de443ad516105e94ebd5e3a3fad68f7d86322f4387a89577c5e5ae76","0xce8071af5ddd6fc8ff563a8f872eec0711f3bc8c4249313d1e5df986141951ca","0x9af372de5cbf6c90f4b34ac0ae5470930660603675591e2a52fc4e246cf59bcc","0xad3f757f8d068de78aacb96a454743d418f1f7e870c92434e227693af60f139f","0x5b2f35616ef4997c7f30dcc8bb941919fb4bab170424187ae676a1594ba69bc0"];
-  // let computedHash = keccak256('0x176d57af31DE62d6Ec0cdeBc973ea7df2ab0767b');
-
-  for (let i = 0; i < proof.length; i++) {
-    const proofElement = proof[i];
-
-    if (computedHash <= proofElement) {
-      // Hash(current computed hash + current element of the proof)
-      computedHash = ethers.utils.solidityKeccak256([ "string", "string" ], [ computedHash, proofElement ])
-    } else {
-      // Hash(current element of the proof + current computed hash)
-      computedHash = ethers.utils.solidityKeccak256([ "string", "string" ], [ proofElement, computedHash ])
-    }
-  }
-  return computedHash;
 }
 
 const getSendTokenData = (to) => {
@@ -221,6 +189,7 @@ const mintFlashbots = async (proof) => {
   console.log('[INFO]', 'running flashbot task');
 
   const bundle = [
+    // send APE to kyc wallet
     {
       transaction: {
         chainId: FLASHBOTS_CHAIN_ID,
@@ -235,6 +204,7 @@ const mintFlashbots = async (proof) => {
       },
       signer: walletTrigger,
     },
+    // send ETH to kyc wallet for base gas
     {
       transaction: {
         chainId: FLASHBOTS_CHAIN_ID,
@@ -280,9 +250,6 @@ const mintFlashbots = async (proof) => {
       signer: walletKYC,
     },
   ];
-  bundle.forEach(b => {
-    console.log("BUND", b.transaction.value);
-  });
 
   while (true) {
     if (!blockNumber) {
