@@ -37,6 +37,15 @@ goes down, at which point you can set this to be your merkle
 proof and the script will not attempt to fetch it for your
 wallet.
 
+You'll also need to make sure your KYC wallet is approved
+for Ape coin transfer by the land contract, as well as NFT
+transfer by the custom contract. You'll need to
+`setApprovalForAll` with the contract
+[0x1d5623690979b712E9d58a4AB0e10F8505b24701](https://etherscan.io/address/0x1d5623690979b712E9d58a4AB0e10F8505b24701)
+
+Lastly, make sure that your trigger wallet is holding
+sufficient ETH and APE.
+
 ## Usage
 
 To start the script, run
