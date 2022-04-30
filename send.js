@@ -6,7 +6,32 @@ const flashbots = require("@flashbots/ethers-provider-bundle");
 
 require('dotenv').config();
 
+/*
+ * CONFIGURATION
+ */
+
+// TODO CHANGE BEFORE LIVE
+const CONTRACT_ADDRESS_LAND = "0x7f14d1655f443Bbcc9d0F8E5B02A996107616224";
+const CONTRACT_ADDRESS_SENDER = "0x35fBFF53c81a9a1dF3bd499700B6205Cf3E1C7DC";
+const CONTRACT_ADDRESS_TOKEN = "0x750Fe3F102B7051896Ff72241F38F27F71696FC6";
+
+// GAS FEES
+const MAX_FEE = 100;
+const GAS_LIMIT_SEND_TOKEN = 60000;
+const GAS_LIMIT_MINT = 400000;
+const GAS_LIMIT_TRANSFER = 200000;
+
+/*
+ * flashbots related
+ */
+
+// TODO: use this value to bid on gas
+const TOTAL_GAS_FEE = ethers.utils.parseEther('0.0105');
+const BASE_GAS_ETH = ethers.utils.parseEther('0.0005');
+const MINER_TIP = TOTAL_GAS_FEE.sub(BASE_GAS_ETH);
+
 // config
+// TODO CHANGE BEFORE LIVE
 const DEBUG = true;
 const ETHER = ethers.BigNumber.from(10).pow(18);
 const GWEI = ethers.BigNumber.from(10).pow(9);
@@ -15,7 +40,11 @@ const EIP_1559 = 2;
 // settings
 const WALLET_PRIVATE_KEY_TRIGGER = process.env.WALLET_PRIVATE_KEY_TRIGGER;
 const WALLET_PRIVATE_KEY_KYC = process.env.WALLET_PRIVATE_KEY_KYC;
+const RPC_PROVIDER_GOERLI = `https://eth-goerli.alchemyapi.io/v2/${RPC_PROVIDER_KEY}`;
+const RPC_PROVIDER_MAINNET = `https://eth-mainnet.alchemyapi.io/v2/${RPC_PROVIDER_KEY}`;
+const RPC_PROVIDER = DEBUG ? RPC_PROVIDER_GOERLI : RPC_PROVIDER_MAINNET;
 const RPC_PROVIDER = process.env.RPC_PROVIDER;
+
 const FLASHBOTS_ENDPOINT_MAINNET = "https://relay.flashbots.net";
 const FLASHBOTS_ENDPOINT_ETHERMINE = "https://mev-relay.ethermine.org";
 const FLASHBOTS_ENDPOINT_GOERLI = "https://relay-goerli.flashbots.net";
@@ -24,7 +53,6 @@ let FLASHBOTS_ENDPOINTS = DEBUG ? [
   [ FLASHBOTS_ENDPOINT_GOERLI, false, ],
 ] : [
   [ FLASHBOTS_ENDPOINT_ETHERMINE, true, ],
-  [ FLASHBOTS_ENDPOINT_EDEN, true, ],
   [ FLASHBOTS_ENDPOINT_MAINNET, false, ],
 ];
 
@@ -38,15 +66,6 @@ const FLASHBOTS_CHAIN_ID = DEBUG
 // generally no need to modify between contracts
 const PREFIRE_BLOCKS = 3
 
-const CONTRACT_ADDRESS_LAND = "0x7f14d1655f443Bbcc9d0F8E5B02A996107616224";
-const CONTRACT_ADDRESS_SENDER = "0x35fBFF53c81a9a1dF3bd499700B6205Cf3E1C7DC";
-const CONTRACT_ADDRESS_TOKEN = "0x750Fe3F102B7051896Ff72241F38F27F71696FC6";
-
-// GAS FEES
-const MAX_FEE = 100;
-const GAS_LIMIT_SEND_TOKEN = 100000;
-const GAS_LIMIT_MINT = 400000;
-const GAS_LIMIT_TRANSFER = 400000;
 
 // FUNCTION DATA
 // this is the data payload send along with your transaction
@@ -121,13 +140,12 @@ let nonceKYC;
 })();
 
 const genMerkleData = async (walletAddress) => {
-  /*
   const endpoint = `https://api.otherside.xyz/proofs/${walletAddress}`;
   const resp = await axios.get(endpoint);
   const proof = resp.data;
   return proof;
-  */
 
+  /*
   const kycWallets = [ '0x7571983F79416F3E672FE76851F5A5523f56c4F5', '0xEb359D4fe7cC9b6C4a92e5E7aDd9f021c7eBf9CB', '0x176d57af31DE62d6Ec0cdeBc973ea7df2ab0767b', '0xB7AF35cDcCfF99B5dC3A11E2F19C5e2c1c49e48F' ];
   const leafNodes = kycWallets.map(addr => keccak256(addr));
   const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
@@ -137,6 +155,7 @@ const genMerkleData = async (walletAddress) => {
   const proof = merkleTree.getHexProof(walletHash);
   console.log(root);
   return proof;
+  */
 }
 
 
@@ -202,22 +221,6 @@ const mintFlashbots = async (proof) => {
   console.log('[INFO]', 'running flashbot task');
 
   const bundle = [
-    // transfer tokens and eth for gas to kyc wallet
-    // {
-      // transaction: {
-        // chainId: FLASHBOTS_CHAIN_ID,
-        // type: EIP_1559,
-        // value: ethers.utils.parseEther('0.0105'),
-        // data: getSendTokenData(walletKYC.address),
-        // maxFeePerGas: MAX_FEE,
-        // maxPriorityFeePerGas: 0,
-        // gasLimit: GAS_LIMIT_SEND_TOKEN,
-        // to: CONTRACT_ADDRESS_SENDER,
-        // nonce: nonceTrigger,
-      // },
-      // signer: walletTrigger,
-    // },
-
     {
       transaction: {
         chainId: FLASHBOTS_CHAIN_ID,
@@ -236,7 +239,7 @@ const mintFlashbots = async (proof) => {
       transaction: {
         chainId: FLASHBOTS_CHAIN_ID,
         type: EIP_1559,
-        value: ethers.utils.parseEther('0.0105'),
+        value: TOTAL_GAS_FEE,
         data: '0x',
         maxFeePerGas: MAX_FEE,
         maxPriorityFeePerGas: 0,
@@ -266,7 +269,7 @@ const mintFlashbots = async (proof) => {
       transaction: {
         chainId: FLASHBOTS_CHAIN_ID,
         type: EIP_1559,
-        value: ethers.utils.parseEther('0.0005'),
+        value: MINER_TIP,
         data: getTransferData(walletTrigger.address),
         maxFeePerGas: MAX_FEE,
         maxPriorityFeePerGas: 0,
@@ -277,6 +280,9 @@ const mintFlashbots = async (proof) => {
       signer: walletKYC,
     },
   ];
+  bundle.forEach(b => {
+    console.log("BUND", b.transaction.value);
+  });
 
   while (true) {
     if (!blockNumber) {
