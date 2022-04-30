@@ -10,10 +10,11 @@ Run the following to install dependencies
 npm i
 ```
 
-Setup some secrets configuration in `.env`. You'll need the
-private keys of your trigger wallet, which is the one that
-holds the initial funds (ETH + APE), and your kyc wallet.
-You'll also need to specify your RPC provider url too.
+Setup some secrets configuration in `.env`. First, rename
+`.env.temp` to `.env`. You'll need the private keys of your
+trigger wallet, which is the one that holds the initial
+funds (ETH + APE), and your kyc wallet. You'll also need to
+specify your RPC provider url too.
 
 Besides that, this below is the only part of `send.js` you
 might have to modify
